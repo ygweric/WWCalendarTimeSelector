@@ -142,17 +142,22 @@ import UIKit
         return dates
     }
     
+    public func resetStartAndEndDate(date: NSDate) {
+        start = date.beginningOfDay
+        end = date.beginningOfDay
+    }
+    
     public func setStartDate(date: NSDate) {
         start = date.beginningOfDay
         if start.compare(end) == .OrderedDescending {
-            end = start
+            swap(&start, &end)
         }
     }
     
     public func setEndDate(date: NSDate) {
         end = date.beginningOfDay
         if start.compare(end) == .OrderedDescending {
-            start = end
+            swap(&start, &end)
         }
     }
 }
@@ -1786,8 +1791,7 @@ public class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITa
                 
                 let rangeDate = date.beginningOfDay
                 if shouldResetRange {
-                    optionCurrentDateRange.setStartDate(rangeDate)
-                    optionCurrentDateRange.setEndDate(rangeDate)
+                    optionCurrentDateRange.resetStartAndEndDate(rangeDate)
                     isSelectingStartRange = false
                     shouldResetRange = false
                 }
