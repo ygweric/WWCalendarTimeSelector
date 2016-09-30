@@ -710,6 +710,12 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             yearTable.reloadData()
             clockView.setNeedsDisplay()
             selMultipleDatesTable.reloadData()
+            
+            self.calendarTable.alpha = 0
+            self.monthsView.alpha = 0
+            self.yearTable.alpha = 0
+            self.clockView.alpha = 0
+
             self.didRotateOrNot()
             
             if optionStyles.showDateMonth {
