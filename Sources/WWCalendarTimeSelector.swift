@@ -426,6 +426,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionClockBackgroundColorFace = UIColor(white: 0.9, alpha: 1)
     open var optionClockBackgroundColorCenter = UIColor.black
     
+    open var optionLabelTitleRange: String = "to"
     open var optionButtonTitleDone: String = "Done"
     open var optionButtonTitleCancel: String = "Cancel"
     open var optionButtonFontCancel = UIFont.systemFont(ofSize: 16)
@@ -666,6 +667,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         rangeStartLabel.font = optionSelectorPanelFontDate
         rangeEndLabel.font = optionSelectorPanelFontDate
         rangeToLabel.font = optionSelectorPanelFontDate
+        rangeToLabel.text = optionLabelTitleRange
         
         let firstMonth = Date().beginningOfYear
         for button in monthsButtons {
