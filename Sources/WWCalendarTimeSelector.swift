@@ -85,8 +85,9 @@ import UIKit
     case single
     /// Multiple Selection. Year and Time interface not available.
     case multiple
-    /// Range Selection. Year and Time interface not available.
-    case range
+    /// Range Selection. Year interface not available.
+    case dateRange
+    case timeRange
 }
 
 /// Set `optionMultipleSelectionGrouping` with one of the following:
@@ -149,13 +150,23 @@ import UIKit
     
     open func setStartDate(_ date: Date) {
         start = date.beginningOfDay
+        setStartTime(date)
+    }
+    
+    open func setEndDate(_ date: Date) {
+        end = date.beginningOfDay
+        setEndTime(date)
+    }
+    
+    open func setStartTime(_ date: Date) {
+        start = date
         if start.compare(end) == .orderedDescending {
             swap(&start, &end)
         }
     }
     
-    open func setEndDate(_ date: Date) {
-        end = date.beginningOfDay
+    open func setEndTime(_ date: Date) {
+        end = date
         if start.compare(end) == .orderedDescending {
             swap(&start, &end)
         }
@@ -733,7 +744,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         
         selMultipleDatesTable.isHidden = optionSelectionType != .multiple
         backgroundSelView.isHidden = optionSelectionType != .single
-        backgroundRangeView.isHidden = optionSelectionType != .range
+        backgroundRangeView.isHidden = optionSelectionType != .dateRange && optionSelectionType != .timeRange
         
         dayViewHeightConstraint.constant = optionShowTopPanel ? optionLayoutTopPanelHeight : 0
         view.layoutIfNeeded()
@@ -922,43 +933,67 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     }
     
     @IBAction func selectStartRange() {
-        if isSelectingStartRange == true {
+        if selCurrrent.showTime {
+            if isSelectingStartRange {
+                showTime(true)
+            } else {
+                WWClockSetTimeStateHour(showingHour: true)
+
+                isSelectingStartRange = true
+            }
             let date = optionCurrentDateRange.start
-            
-            let seventhRowStartDate = date.beginningOfMonth
-            calRow3StartDate = ((seventhRowStartDate - 1.day).beginningOfWeek - 1.day).beginningOfWeek
-            calRow2StartDate = (calRow3StartDate - 1.day).beginningOfWeek
-            calRow1StartDate = (calRow2StartDate - 1.day).beginningOfWeek
-            
-            flashDate = date
-            calendarTable.reloadData()
-            calendarTable.scrollToRow(at: IndexPath(row: 4, section: 0), at: UITableViewScrollPosition.top, animated: true)
+            optionCurrentDate = optionCurrentDate.change(hour: date.hour, minute: date.minute)
+        } else {
+            if isSelectingStartRange == true {
+                let date = optionCurrentDateRange.start
+                
+                let seventhRowStartDate = date.beginningOfMonth
+                calRow3StartDate = ((seventhRowStartDate - 1.day).beginningOfWeek - 1.day).beginningOfWeek
+                calRow2StartDate = (calRow3StartDate - 1.day).beginningOfWeek
+                calRow1StartDate = (calRow2StartDate - 1.day).beginningOfWeek
+                
+                flashDate = date
+                calendarTable.reloadData()
+                calendarTable.scrollToRow(at: IndexPath(row: 4, section: 0), at: UITableViewScrollPosition.top, animated: true)
+            }
+            else {
+                isSelectingStartRange = true
+            }
+            shouldResetRange = false
+            updateDate()
         }
-        else {
-            isSelectingStartRange = true
-        }
-        shouldResetRange = false
-        updateDate()
     }
     
     @IBAction func selectEndRange() {
-        if isSelectingStartRange == false {
+        if selCurrrent.showTime {
+            if !isSelectingStartRange {
+                showTime(true)
+            } else {
+                WWClockSetTimeStateHour(showingHour: true)
+                
+                isSelectingStartRange = false
+            }
             let date = optionCurrentDateRange.end
-            
-            let seventhRowStartDate = date.beginningOfMonth
-            calRow3StartDate = ((seventhRowStartDate - 1.day).beginningOfWeek - 1.day).beginningOfWeek
-            calRow2StartDate = (calRow3StartDate - 1.day).beginningOfWeek
-            calRow1StartDate = (calRow2StartDate - 1.day).beginningOfWeek
-            
-            flashDate = date
-            calendarTable.reloadData()
-            calendarTable.scrollToRow(at: IndexPath(row: 4, section: 0), at: UITableViewScrollPosition.top, animated: true)
+            optionCurrentDate = optionCurrentDate.change(hour: date.hour, minute: date.minute)
+        } else {
+            if isSelectingStartRange == false {
+                let date = optionCurrentDateRange.end
+                
+                let seventhRowStartDate = date.beginningOfMonth
+                calRow3StartDate = ((seventhRowStartDate - 1.day).beginningOfWeek - 1.day).beginningOfWeek
+                calRow2StartDate = (calRow3StartDate - 1.day).beginningOfWeek
+                calRow1StartDate = (calRow2StartDate - 1.day).beginningOfWeek
+                
+                flashDate = date
+                calendarTable.reloadData()
+                calendarTable.scrollToRow(at: IndexPath(row: 4, section: 0), at: UITableViewScrollPosition.top, animated: true)
+            }
+            else {
+                isSelectingStartRange = false
+            }
+            shouldResetRange = false
+            updateDate()
         }
-        else {
-            isSelectingStartRange = false
-        }
-        shouldResetRange = false
-        updateDate()
     }
     
     @IBAction func showDate() {
@@ -998,8 +1033,10 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             del?.WWCalendarTimeSelectorDone?(picker, date: optionCurrentDate)
         case .multiple:
             del?.WWCalendarTimeSelectorDone?(picker, dates: multipleDates)
-        case .range:
+        case .dateRange:
             del?.WWCalendarTimeSelectorDone?(picker, dates: optionCurrentDateRange.array)
+        case .timeRange:
+            del?.WWCalendarTimeSelectorDone?(picker, dates: [optionCurrentDateRange.start, optionCurrentDateRange.end])
         }
         dismiss()
     }
@@ -1187,8 +1224,20 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         monthLabel.text = optionCurrentDate.stringFromFormat("MMM")
         dateLabel.text = optionStyles.showDateMonth ? optionCurrentDate.stringFromFormat("d") : nil
         yearLabel.text = optionCurrentDate.stringFromFormat("yyyy")
-        rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("d' 'MMM' 'yyyy")
-        rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("d' 'MMM' 'yyyy")
+
+        switch optionSelectionType {
+        case .timeRange:
+            shouldResetRange = false
+
+            rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("h':'mma").lowercased()
+            rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("h':'mma").lowercased()
+        case .dateRange:
+            rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("d' 'MMM' 'yyyy")
+            rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("d' 'MMM' 'yyyy")
+        default:
+            break
+        }
+        
         rangeToLabel.textColor = optionSelectorPanelFontColorDate
         if shouldResetRange {
             rangeStartLabel.textColor = optionSelectorPanelFontColorDateHighlight
@@ -1665,8 +1714,10 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
                         calRow.selectedDates = [optionCurrentDate]
                     case .multiple:
                         calRow.selectedDates = optionCurrentDates
-                    case .range:
+                    case .dateRange:
                         calRow.selectedDates = Set(optionCurrentDateRange.array)
+                    case .timeRange:
+                        calRow.selectedDates = [optionCurrentDateRange.start, optionCurrentDateRange.end]
                     }
                     calRow.setNeedsDisplay()
                     if let fd = flashDate {
@@ -1960,7 +2011,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
                     }
                 }
                 
-            case .range:
+            case .dateRange:
                 
                 let rangeDate = date.beginningOfDay
                 if shouldResetRange {
@@ -1982,6 +2033,9 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
                     }
                 }
                 updateDate()
+                
+            case .timeRange:
+                break
             }
             calendarTable.reloadData()
         }
@@ -1999,6 +2053,12 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         if isPM && newHour < 12 {
             newHour = newHour + 12
         }
+
+        if isSelectingStartRange {
+            optionCurrentDateRange.start = optionCurrentDateRange.start.change(hour: newHour)
+        } else {
+            optionCurrentDateRange.end = optionCurrentDateRange.end.change(hour: newHour)
+        }
         
         optionCurrentDate = optionCurrentDate.change(hour: newHour)
         updateDate()
@@ -2015,14 +2075,32 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     }
     
     internal func WWClockSetHourMilitary(_ hour: Int) {
+        if isSelectingStartRange {
+            optionCurrentDateRange.start = optionCurrentDateRange.start.change(hour: hour)
+        } else {
+            optionCurrentDateRange.end = optionCurrentDateRange.end.change(hour: hour)
+        }
         optionCurrentDate = optionCurrentDate.change(hour: hour)
+
         updateDate()
         clockView.setNeedsDisplay()
     }
     
     internal func WWClockSetMinute(_ minute: Int) {
+        if isSelectingStartRange {
+            optionCurrentDateRange.start = optionCurrentDateRange.start.change(minute: minute)
+        } else {
+            optionCurrentDateRange.end = optionCurrentDateRange.end.change(minute: minute)
+        }
         optionCurrentDate = optionCurrentDate.change(minute: minute)
+
         updateDate()
+        clockView.setNeedsDisplay()
+    }
+    
+    func WWClockSetTimeStateHour(showingHour: Bool) {
+        selTimeStateHour = showingHour
+        clockView.showingHour = showingHour
         clockView.setNeedsDisplay()
     }
 }
@@ -2285,6 +2363,7 @@ internal protocol WWClockProtocol: NSObjectProtocol {
     func WWClockSwitchAMPM(isAM: Bool, isPM: Bool)
     func WWClockSetHourMilitary(_ hour: Int)
     func WWClockSetMinute(_ minute: Int)
+    func WWClockSetTimeStateHour(showingHour: Bool)
 }
 
 internal class WWClock: UIView {
@@ -2401,7 +2480,6 @@ internal class WWClock: UIView {
                     ctx?.scaleBy(x: -1, y: 1)
                     ctx?.strokePath()
                     ctx?.restoreGState()
-                    
                     // highlight
                     ctx?.saveGState()
                     ctx?.setFillColor(backgroundColorHourHighlight.cgColor)
@@ -2575,6 +2653,10 @@ internal class WWClock: UIView {
             }
             else {
                 touchClock(pt: pt)
+
+                if showingHour {
+                    delegate.WWClockSetTimeStateHour(showingHour: false)
+                }
             }
         }
     }
