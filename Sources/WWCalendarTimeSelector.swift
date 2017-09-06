@@ -158,16 +158,16 @@ import UIKit
         setEndTime(date)
     }
     
-    open func setStartTime(_ date: Date) {
+    open func setStartTime(_ date: Date, needSort: Bool = true) {
         start = date
-        if start.compare(end) == .orderedDescending {
+        if needSort && start.compare(end) == .orderedDescending {
             swap(&start, &end)
         }
     }
-
-    open func setEndTime(_ date: Date) {
+    
+    open func setEndTime(_ date: Date, needSort: Bool = true) {
         end = date
-        if start.compare(end) == .orderedDescending {
+        if needSort && start.compare(end) == .orderedDescending {
             swap(&start, &end)
         }
     }
@@ -195,6 +195,8 @@ import UIKit
     ///     - dates: Selected dates.
     @objc optional func WWCalendarTimeSelectorDone(_ selector: WWCalendarTimeSelector, dates: [Date])
     
+    @objc optional func WWCalendarTimeSelectorShouldDone(_ selector: WWCalendarTimeSelector, dates: [Date]) -> Bool
+    
     /// Method called before the selector is dismissed, and when user is Done with the selector.
     ///
     /// This method is only called when `optionMultipleSelection` is `false`.
@@ -206,6 +208,8 @@ import UIKit
     ///     - selector: The selector that will be dismissed.
     ///     - dates: Selected date.
     @objc optional func WWCalendarTimeSelectorDone(_ selector: WWCalendarTimeSelector, date: Date)
+    
+    @objc optional func WWCalendarTimeSelectorShouldDone(_ selector: WWCalendarTimeSelector, date: Date) -> Bool
     
     /// Method called before the selector is dismissed, and when user Cancel the selector.
     ///
@@ -1028,13 +1032,34 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         let del = delegate
         switch optionSelectionType {
         case .single:
+            let shouldDone = del?.WWCalendarTimeSelectorShouldDone?(picker, date: optionCurrentDate)
+            if  shouldDone != nil && shouldDone! == false {
+                return
+            }
             del?.WWCalendarTimeSelectorDone?(picker, date: optionCurrentDate)
+            
         case .multiple:
+            let shouldDone = del?.WWCalendarTimeSelectorShouldDone?(picker, dates: multipleDates)
+            if  shouldDone != nil && shouldDone! == false {
+                return
+            }
             del?.WWCalendarTimeSelectorDone?(picker, dates: multipleDates)
+            
         case .dateRange:
+            let shouldDone = del?.WWCalendarTimeSelectorShouldDone?(picker, dates: optionCurrentDateRange.array)
+            if  shouldDone != nil && shouldDone! == false {
+                return
+            }
             del?.WWCalendarTimeSelectorDone?(picker, dates: optionCurrentDateRange.array)
+            
         case .timeRange:
-            del?.WWCalendarTimeSelectorDone?(picker, dates: [optionCurrentDateRange.start, optionCurrentDateRange.end])
+            let dates = [optionCurrentDateRange.start, optionCurrentDateRange.end]
+            let shouldDone = del?.WWCalendarTimeSelectorShouldDone?(picker, dates: dates)
+            if  shouldDone != nil && shouldDone! == false {
+                return
+            }
+            del?.WWCalendarTimeSelectorDone?(picker, dates: dates)
+            
         }
         dismiss()
     }

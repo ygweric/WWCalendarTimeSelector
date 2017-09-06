@@ -117,8 +117,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             selector.optionStyles.showYear(false)
             selector.optionStyles.showTime(true)
 
-            selector.optionCurrentDateRange.setStartDate(Date().change(hour : 6))
-            selector.optionCurrentDateRange.setEndDate(Date().change(hour : 8))
+            let start = Date().change(hour : 6)!
+            let end = Date().change(hour : 8)!
+            selector.optionCurrentDate = start
+            selector.optionCurrentDateRange.setStartDate(start)
+            selector.optionCurrentDateRange.setEndDate(end)
+
             selector.optionSelectionType = WWCalendarTimeSelectorSelection.timeRange
         default:
             break
