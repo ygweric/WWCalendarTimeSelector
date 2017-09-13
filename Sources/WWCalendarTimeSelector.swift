@@ -440,6 +440,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionClockBackgroundColorMinuteHighlightNeedle = UIColor.brown
     open var optionClockBackgroundColorFace = UIColor(white: 0.9, alpha: 1)
     open var optionClockBackgroundColorCenter = UIColor.black
+    open var optionClockBackgroundColorNeedleWidth: CGFloat = 1
     
     open var optionButtonShowCancel: Bool = false
     open var optionLabelTitleRange: String = "to"
@@ -804,6 +805,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         clockView.fontColorHourHighlight = optionClockFontColorHourHighlight
         clockView.backgroundColorHourHighlight = optionClockBackgroundColorHourHighlight
         clockView.backgroundColorHourHighlightNeedle = optionClockBackgroundColorHourHighlightNeedle
+        clockView.clockBackgroundColorNeedleWidth = optionClockBackgroundColorNeedleWidth
         clockView.fontMinute = optionClockFontMinute
         clockView.fontMinuteHighlight = optionClockFontMinuteHighlight
         clockView.fontColorMinute = optionClockFontColorMinute
@@ -2405,6 +2407,7 @@ internal class WWClock: UIView {
     internal var fontColorHourHighlight: UIColor!
     internal var backgroundColorHourHighlight: UIColor!
     internal var backgroundColorHourHighlightNeedle: UIColor!
+    internal var clockBackgroundColorNeedleWidth: CGFloat!
     internal var fontMinute: UIFont!
     internal var fontMinuteHighlight: UIFont!
     internal var fontColorMinute: UIColor!
@@ -2496,7 +2499,7 @@ internal class WWClock: UIView {
                     // needle
                     ctx?.saveGState()
                     ctx?.setStrokeColor(backgroundColorHourHighlightNeedle.cgColor)
-                    ctx?.setLineWidth(1)
+                    ctx?.setLineWidth(clockBackgroundColorNeedleWidth)
                     ctx?.move(to: CGPoint(x: 0, y: 0))
                     ctx?.scaleBy(x: -1, y: 1)
                     ctx?.addLine(to: CGPoint(x: (radiusHighlight - highlightCircleSize / 2) * cos(angle), y: -((radiusHighlight - highlightCircleSize / 2) * sin(angle))))
@@ -2561,7 +2564,7 @@ internal class WWClock: UIView {
                     // needle
                     ctx?.saveGState()
                     ctx?.setStrokeColor(backgroundColorMinuteHighlightNeedle.cgColor)
-                    ctx?.setLineWidth(1)
+                    ctx?.setLineWidth(clockBackgroundColorNeedleWidth)
                     ctx?.move(to: CGPoint(x: 0, y: 0))
                     ctx?.scaleBy(x: -1, y: 1)
                     if minuteStep.rawValue < 5 && element % 5 != 0 {
