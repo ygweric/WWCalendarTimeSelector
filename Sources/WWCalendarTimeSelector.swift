@@ -90,6 +90,11 @@ import UIKit
     case timeRange
 }
 
+@objc public enum WWCalendarTimeSelectorLeftButtonType: Int {
+    case cancel
+    case clear
+}
+
 /// Set `optionMultipleSelectionGrouping` with one of the following:
 ///
 /// `Simple`: No grouping for multiple selection. Selected dates are displayed as individual circles.
@@ -179,6 +184,7 @@ import UIKit
 /// `WWCalendarTimeSelectorDone:selector:date:`
 /// `WWCalendarTimeSelectorCancel:selector:dates:`
 /// `WWCalendarTimeSelectorCancel:selector:date:`
+/// `WWCalendarTimeSelectorClear:selector:`
 /// `WWCalendarTimeSelectorWillDismiss:selector:`
 /// `WWCalendarTimeSelectorDidDismiss:selector:`
 @objc public protocol WWCalendarTimeSelectorProtocol {
@@ -234,6 +240,18 @@ import UIKit
     ///     - selector: The selector that will be dismissed.
     ///     - dates: Selected date.
     @objc optional func WWCalendarTimeSelectorCancel(_ selector: WWCalendarTimeSelector, date: Date)
+    
+    /// Method called before the selector is dismissed, and when user Cancel the selector.
+    ///
+    /// This method is only called when `optionMultipleSelection` is `true`.
+    ///
+    /// - SeeAlso:
+    /// `WWCalendarTimeSelectorClear:selector:`
+    ///
+    /// - Parameters:
+    ///     - selector: The selector that will be dismissed.
+    ///     - dates: Selected dates.
+    @objc optional func WWCalendarTimeSelectorClear(_ selector: WWCalendarTimeSelector)
     
     /// Method called before the selector is dismissed.
     ///
@@ -336,6 +354,8 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     /// - Note:
     /// Selection styles will only affect date selection. It is currently not possible to select multiple/range
     open var optionSelectionType: WWCalendarTimeSelectorSelection = .single
+    
+    open var optionLeftButtonType: WWCalendarTimeSelectorLeftButtonType = .cancel
     
     /// Set to default date when selector is presented.
     ///
@@ -442,17 +462,18 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionClockBackgroundColorCenter = UIColor.black
     open var optionClockBackgroundColorNeedleWidth: CGFloat = 1
     
-    open var optionButtonShowCancel: Bool = false
     open var optionLabelTitleRange: String = "to"
+    open var optionButtonShowLeftButton: Bool = false
+    
     open var optionButtonTitleDone: String = "Done"
-    open var optionButtonTitleCancel: String = "Cancel"
-    open var optionButtonFontCancel = UIFont.systemFont(ofSize: 16)
+    open var optionButtonTitleLeft: String = "Cancel"
+    open var optionButtonFontLeft = UIFont.systemFont(ofSize: 16)
     open var optionButtonFontDone = UIFont.boldSystemFont(ofSize: 16)
-    open var optionButtonFontColorCancel = UIColor.brown
+    open var optionButtonFontColorLeft = UIColor.brown
     open var optionButtonFontColorDone = UIColor.brown
-    open var optionButtonFontColorCancelHighlight = UIColor.brown.withAlphaComponent(0.25)
+    open var optionButtonFontColorLeftHighlight = UIColor.brown.withAlphaComponent(0.25)
     open var optionButtonFontColorDoneHighlight = UIColor.brown.withAlphaComponent(0.25)
-    open var optionButtonBackgroundColorCancel = UIColor.clear
+    open var optionButtonBackgroundColorLeft = UIColor.clear
     open var optionButtonBackgroundColorDone = UIColor.clear
     
     open var optionTopPanelBackgroundColor = UIColor.brown
@@ -523,11 +544,11 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             optionClockBackgroundColorFace = UIColor(white: 0.9, alpha: 1)
             optionClockBackgroundColorCenter = UIColor.black
             
-            optionButtonFontColorCancel = tintColor
+            optionButtonFontColorLeft = tintColor
             optionButtonFontColorDone = tintColor
-            optionButtonFontColorCancelHighlight = tintColor.withAlphaComponent(0.25)
+            optionButtonFontColorLeftHighlight = tintColor.withAlphaComponent(0.25)
             optionButtonFontColorDoneHighlight = tintColor.withAlphaComponent(0.25)
-            optionButtonBackgroundColorCancel = UIColor.clear
+            optionButtonBackgroundColorLeft = UIColor.clear
             optionButtonBackgroundColorDone = UIColor.clear
             
             optionTopPanelBackgroundColor = tintColor
@@ -605,7 +626,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     @IBOutlet fileprivate weak var backgroundRangeView: UIView!
     @IBOutlet fileprivate weak var backgroundContentView: UIView!
     @IBOutlet fileprivate weak var backgroundButtonsView: UIView!
-    @IBOutlet fileprivate weak var cancelButton: UIButton!
+    @IBOutlet fileprivate weak var leftButton: UIButton!
     @IBOutlet fileprivate weak var doneButton: UIButton!
     @IBOutlet fileprivate weak var selDateView: UIView!
     @IBOutlet fileprivate weak var selYearView: UIView!
@@ -763,14 +784,14 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         selMultipleDatesTable.backgroundColor = optionSelectorPanelBackgroundColor
         
         doneButton.backgroundColor = optionButtonBackgroundColorDone
-        cancelButton.backgroundColor = optionButtonBackgroundColorCancel
+        leftButton.backgroundColor = optionButtonBackgroundColorLeft
         doneButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleDone, attributes: [NSFontAttributeName: optionButtonFontDone, NSForegroundColorAttributeName: optionButtonFontColorDone]), for: UIControlState())
-        cancelButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleCancel, attributes: [NSFontAttributeName: optionButtonFontCancel, NSForegroundColorAttributeName: optionButtonFontColorCancel]), for: UIControlState())
+        leftButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleLeft, attributes: [NSFontAttributeName: optionButtonFontLeft, NSForegroundColorAttributeName: optionButtonFontColorLeft]), for: UIControlState())
         doneButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleDone, attributes: [NSFontAttributeName: optionButtonFontDone, NSForegroundColorAttributeName: optionButtonFontColorDoneHighlight]), for: UIControlState.highlighted)
-        cancelButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleCancel, attributes: [NSFontAttributeName: optionButtonFontCancel, NSForegroundColorAttributeName: optionButtonFontColorCancelHighlight]), for: UIControlState.highlighted)
+        leftButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleLeft, attributes: [NSFontAttributeName: optionButtonFontLeft, NSForegroundColorAttributeName: optionButtonFontColorLeftHighlight]), for: UIControlState.highlighted)
         
-        if !optionButtonShowCancel {
-            cancelButton.isHidden = true
+        if !optionButtonShowLeftButton {
+            leftButton.isHidden = true
         }
         
         dayLabel.textColor = optionTopPanelFontColor
@@ -1017,7 +1038,16 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         showTime(true)
     }
     
-    @IBAction func cancel() {
+    @IBAction func actionLeftButton() {
+        switch optionLeftButtonType {
+        case .cancel:
+            cancel()
+        case .clear:
+            clear()
+        }
+    }
+    
+    func cancel() {
         let picker = self
         let del = delegate
         if optionSelectionType == .single {
@@ -1026,6 +1056,15 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         else {
             del?.WWCalendarTimeSelectorCancel?(picker, dates: multipleDates)
         }
+        dismiss()
+    }
+    
+    func clear() {
+        let picker = self
+        let del = delegate
+        
+        del?.WWCalendarTimeSelectorClear?(picker)
+        
         dismiss()
     }
     
