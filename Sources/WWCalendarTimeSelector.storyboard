@@ -453,7 +453,7 @@
                                                     <color key="titleColor" red="0.66666666666666663" green="0.66666666666666663" blue="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 </state>
                                                 <connections>
-                                                    <action selector="done" destination="guU-fh-eOY" eventType="touchUpInside" id="2ve-C3-ykV"/>
+                                                    <action selector="actionRightButton" destination="guU-fh-eOY" eventType="touchUpInside" id="txv-Sr-mMZ"/>
                                                 </connections>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" verticalCompressionResistancePriority="751" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="uaO-9T-OmA">
@@ -516,13 +516,13 @@
                         <outlet property="dateLabel" destination="Yrt-vu-FRn" id="J1Z-iR-uqs"/>
                         <outlet property="dayLabel" destination="cRz-DT-zDj" id="WBC-zT-MZf"/>
                         <outlet property="dayViewHeightConstraint" destination="VOY-qT-L2z" id="5oj-qs-ThL"/>
-                        <outlet property="doneButton" destination="MbZ-dk-Lr7" id="YMv-Pf-w94"/>
                         <outlet property="leftButton" destination="uaO-9T-OmA" id="Nfa-Tv-E62"/>
                         <outlet property="monthLabel" destination="TE8-jR-vLh" id="Amd-mb-fPG"/>
                         <outlet property="monthsView" destination="sYP-fa-FFm" id="RT9-7z-TEQ"/>
                         <outlet property="rangeEndLabel" destination="bMc-b5-1mw" id="D2Z-mK-OUu"/>
                         <outlet property="rangeStartLabel" destination="6KR-IR-Y73" id="cH7-4P-MIl"/>
                         <outlet property="rangeToLabel" destination="4WB-OT-Xs4" id="rut-qP-WIL"/>
+                        <outlet property="rightButton" destination="MbZ-dk-Lr7" id="YMv-Pf-w94"/>
                         <outlet property="selDateHeightConstraint" destination="Gem-Sz-ScJ" id="wu0-0t-UN5"/>
                         <outlet property="selDateLeftConstraint" destination="OGW-Ry-TN2" id="Dmf-rc-49b"/>
                         <outlet property="selDateRightConstraint" destination="D7Q-4K-K8y" id="1FX-Pu-nFb"/>

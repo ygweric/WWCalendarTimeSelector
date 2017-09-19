@@ -182,6 +182,7 @@ import UIKit
 ///
 /// `WWCalendarTimeSelectorDone:selector:dates:`
 /// `WWCalendarTimeSelectorDone:selector:date:`
+/// `WWCalendarTimeSelectorNext:selector:date:`
 /// `WWCalendarTimeSelectorCancel:selector:dates:`
 /// `WWCalendarTimeSelectorCancel:selector:date:`
 /// `WWCalendarTimeSelectorClear:selector:`
@@ -216,6 +217,10 @@ import UIKit
     @objc optional func WWCalendarTimeSelectorDone(_ selector: WWCalendarTimeSelector, date: Date)
     
     @objc optional func WWCalendarTimeSelectorShouldDone(_ selector: WWCalendarTimeSelector, date: Date) -> Bool
+    
+    @objc optional func WWCalendarTimeSelectorNext(_ selector: WWCalendarTimeSelector, date: Date)
+    
+    @objc optional func WWCalendarTimeSelectorShouldNext(_ selector: WWCalendarTimeSelector, date: Date) -> Bool
     
     /// Method called before the selector is dismissed, and when user Cancel the selector.
     ///
@@ -466,15 +471,16 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionButtonShowLeftButton: Bool = false
     
     open var optionButtonTitleDone: String = "Done"
+    open var optionButtonTitleNext: String = "Next"
     open var optionButtonTitleLeft: String = "Cancel"
     open var optionButtonFontLeft = UIFont.systemFont(ofSize: 16)
-    open var optionButtonFontDone = UIFont.boldSystemFont(ofSize: 16)
+    open var optionButtonFontRight = UIFont.boldSystemFont(ofSize: 16)
     open var optionButtonFontColorLeft = UIColor.brown
-    open var optionButtonFontColorDone = UIColor.brown
+    open var optionButtonFontColorRight = UIColor.brown
     open var optionButtonFontColorLeftHighlight = UIColor.brown.withAlphaComponent(0.25)
-    open var optionButtonFontColorDoneHighlight = UIColor.brown.withAlphaComponent(0.25)
+    open var optionButtonFontColorRightHighlight = UIColor.brown.withAlphaComponent(0.25)
     open var optionButtonBackgroundColorLeft = UIColor.clear
-    open var optionButtonBackgroundColorDone = UIColor.clear
+    open var optionButtonBackgroundColorRight = UIColor.clear
     
     open var optionTopPanelBackgroundColor = UIColor.brown
     open var optionTopPanelFont = UIFont.systemFont(ofSize: 16)
@@ -545,11 +551,11 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             optionClockBackgroundColorCenter = UIColor.black
             
             optionButtonFontColorLeft = tintColor
-            optionButtonFontColorDone = tintColor
+            optionButtonFontColorRight = tintColor
             optionButtonFontColorLeftHighlight = tintColor.withAlphaComponent(0.25)
-            optionButtonFontColorDoneHighlight = tintColor.withAlphaComponent(0.25)
+            optionButtonFontColorRightHighlight = tintColor.withAlphaComponent(0.25)
             optionButtonBackgroundColorLeft = UIColor.clear
-            optionButtonBackgroundColorDone = UIColor.clear
+            optionButtonBackgroundColorRight = UIColor.clear
             
             optionTopPanelBackgroundColor = tintColor
             optionTopPanelFontColor = UIColor.white
@@ -627,7 +633,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     @IBOutlet fileprivate weak var backgroundContentView: UIView!
     @IBOutlet fileprivate weak var backgroundButtonsView: UIView!
     @IBOutlet fileprivate weak var leftButton: UIButton!
-    @IBOutlet fileprivate weak var doneButton: UIButton!
+    @IBOutlet fileprivate weak var rightButton: UIButton!
     @IBOutlet fileprivate weak var selDateView: UIView!
     @IBOutlet fileprivate weak var selYearView: UIView!
     @IBOutlet fileprivate weak var selTimeView: UIView!
@@ -783,11 +789,10 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         backgroundButtonsView.backgroundColor = optionBottomPanelBackgroundColor
         selMultipleDatesTable.backgroundColor = optionSelectorPanelBackgroundColor
         
-        doneButton.backgroundColor = optionButtonBackgroundColorDone
+        rightButton.backgroundColor = optionButtonBackgroundColorRight
         leftButton.backgroundColor = optionButtonBackgroundColorLeft
-        doneButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleDone, attributes: [NSFontAttributeName: optionButtonFontDone, NSForegroundColorAttributeName: optionButtonFontColorDone]), for: UIControlState())
+        setupRightButton(title: optionButtonTitleDone)
         leftButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleLeft, attributes: [NSFontAttributeName: optionButtonFontLeft, NSForegroundColorAttributeName: optionButtonFontColorLeft]), for: UIControlState())
-        doneButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleDone, attributes: [NSFontAttributeName: optionButtonFontDone, NSForegroundColorAttributeName: optionButtonFontColorDoneHighlight]), for: UIControlState.highlighted)
         leftButton.setAttributedTitle(NSAttributedString(string: optionButtonTitleLeft, attributes: [NSFontAttributeName: optionButtonFontLeft, NSForegroundColorAttributeName: optionButtonFontColorLeftHighlight]), for: UIControlState.highlighted)
         
         if !optionButtonShowLeftButton {
@@ -837,6 +842,11 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         updateDate()
         
         isFirstLoad = true
+    }
+    
+    func setupRightButton(title: String) {
+        rightButton.setAttributedTitle(NSAttributedString(string: title, attributes: [NSFontAttributeName: optionButtonFontRight, NSForegroundColorAttributeName: optionButtonFontColorRight]), for: UIControlState())
+        rightButton.setAttributedTitle(NSAttributedString(string: title, attributes: [NSFontAttributeName: optionButtonFontRight, NSForegroundColorAttributeName: optionButtonFontColorRightHighlight]), for: UIControlState.highlighted)
     }
     
     open override func viewDidLayoutSubviews() {
@@ -987,6 +997,8 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             shouldResetRange = false
             updateDate()
         }
+        
+        setupRightButton(title: optionButtonTitleNext)
     }
     
     @IBAction func selectEndRange() {
@@ -1019,6 +1031,8 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             shouldResetRange = false
             updateDate()
         }
+        
+        setupRightButton(title: optionButtonTitleDone)
     }
     
     @IBAction func showDate() {
@@ -1068,7 +1082,19 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         dismiss()
     }
     
-    @IBAction func done() {
+    @IBAction func actionRightButton() {
+        if optionSelectionType == .timeRange && isSelectingStartRange {
+            next()
+        } else {
+            done()
+        }
+    }
+    
+    func next() {
+        selectEndRange()
+    }
+    
+    func done() {
         let picker = self
         let del = delegate
         switch optionSelectionType {
@@ -1295,6 +1321,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
 
             rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("h':'mma").lowercased()
             rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("h':'mma").lowercased()
+            setupRightButton(title: optionButtonTitleNext)
         case .dateRange:
             rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("d' 'MMM' 'yyyy")
             rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("d' 'MMM' 'yyyy")
