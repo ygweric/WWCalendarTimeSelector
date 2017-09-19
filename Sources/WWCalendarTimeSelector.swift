@@ -95,6 +95,13 @@ import UIKit
     case clear
 }
 
+@objc public enum WWCalendarTimeRangeSelectorResetType: Int {
+    case none
+    case firstTime
+    case always
+}
+
+
 /// Set `optionMultipleSelectionGrouping` with one of the following:
 ///
 /// `Simple`: No grouping for multiple selection. Selected dates are displayed as individual circles.
@@ -361,6 +368,14 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionSelectionType: WWCalendarTimeSelectorSelection = .single
     
     open var optionLeftButtonType: WWCalendarTimeSelectorLeftButtonType = .cancel
+    
+    open var optionTimeRangeResetType: WWCalendarTimeRangeSelectorResetType  = .none {
+        didSet {
+            if optionTimeRangeResetType == .firstTime {
+                hasSelectedEndTime = false
+            }
+        }
+    }
     
     /// Set to default date when selector is presented.
     ///
@@ -704,6 +719,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     fileprivate var multipleDates: [Date] { return optionCurrentDates.sorted(by: { $0.compare($1) == ComparisonResult.orderedAscending }) }
     fileprivate var multipleDatesLastAdded: Date?
     fileprivate var flashDate: Date?
+    fileprivate var hasSelectedEndTime = true
 
     open var defaultTopPanelTitleForMultipleDates = "Select Multiple Dates"
     fileprivate let portraitHeight: CGFloat = max(UIScreen.main.bounds.height, UIScreen.main.bounds.width)
@@ -1002,6 +1018,19 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     }
     
     @IBAction func selectEndRange() {
+        if optionTimeRangeResetType != .none {
+            if (optionTimeRangeResetType == .firstTime && !hasSelectedEndTime)
+                || (optionTimeRangeResetType == .always) {
+                
+                optionCurrentDateRange.end = optionCurrentDateRange.start
+                let date = optionCurrentDateRange.end
+                optionCurrentDate = optionCurrentDate.change(hour: date.hour, minute: date.minute)
+                showTime(true)
+                
+                hasSelectedEndTime = true
+            }
+        }
+        
         if selCurrrent.showTime {
             if !isSelectingStartRange {
                 showTime(true)
