@@ -461,10 +461,12 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionCalendarFontColorFutureYears = UIColor.darkGray
     open var optionCalendarFontColorFutureYearsHighlight = UIColor.black
     
+    open var optionAMPMLowercase = true
     open var optionClockFontAMPM = UIFont.systemFont(ofSize: 18)
     open var optionClockFontAMPMHighlight = UIFont.systemFont(ofSize: 20)
     open var optionClockFontColorAMPM = UIColor.black
     open var optionClockFontColorAMPMHighlight = UIColor.white
+    open var optionClockBackgroundColorAMPM = UIColor.brown
     open var optionClockBackgroundColorAMPMHighlight = UIColor.brown
     open var optionClockFontHour = UIFont.systemFont(ofSize: 16)
     open var optionClockFontHourHighlight = UIFont.systemFont(ofSize: 18)
@@ -483,6 +485,13 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     open var optionClockBackgroundColorNeedleWidth: CGFloat = 1
     
     open var optionLabelTitleRange: String = "to"
+    open var optionLabelTitleRangeColor: UIColor = UIColor.white
+    open var optionLabelTitleRangeFont: UIFont = UIFont.systemFont(ofSize: 16)
+    
+    open var optionDateRangeLabelColor: UIColor = UIColor.white
+    open var optionDateRangeLabelColorHighlight: UIColor = UIColor.gray
+    open var optionDateRangeLabelFont: UIFont = UIFont.systemFont(ofSize: 16)
+    
     open var optionButtonShowLeftButton: Bool = false
     
     open var optionButtonTitleDone: String = "Done"
@@ -553,6 +562,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             
             optionClockFontColorAMPM = UIColor.black
             optionClockFontColorAMPMHighlight = UIColor.white
+            optionClockBackgroundColorAMPM = tintColor
             optionClockBackgroundColorAMPMHighlight = tintColor
             optionClockFontColorHour = UIColor.black
             optionClockFontColorHourHighlight = UIColor.white
@@ -722,17 +732,20 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
     fileprivate var hasSelectedEndTime = true
 
     open var defaultTopPanelTitleForMultipleDates = "Select Multiple Dates"
-    fileprivate let portraitHeight: CGFloat = max(UIScreen.main.bounds.height, UIScreen.main.bounds.width)
-    fileprivate let portraitWidth: CGFloat = min(UIScreen.main.bounds.height, UIScreen.main.bounds.width)
-    
+
     fileprivate var viewBoundsHeight: CGFloat {
         return view.bounds.height - topLayoutGuide.length - bottomLayoutGuide.length
     }
     fileprivate var viewBoundsWidth: CGFloat {
         return view.bounds.width
     }
-
-    fileprivate var isSelectingStartRange: Bool = true { didSet { rangeStartLabel.textColor = isSelectingStartRange ? optionSelectorPanelFontColorDateHighlight : optionSelectorPanelFontColorDate; rangeEndLabel.textColor = isSelectingStartRange ? optionSelectorPanelFontColorDate : optionSelectorPanelFontColorDateHighlight } }
+    fileprivate var portraitHeight: CGFloat {
+        return max(viewBoundsHeight, viewBoundsWidth)
+    }
+    fileprivate var portraitWidth: CGFloat {
+        return min(viewBoundsHeight, viewBoundsWidth)
+    }
+    fileprivate var isSelectingStartRange: Bool = true { didSet { rangeStartLabel.textColor = isSelectingStartRange ? optionDateRangeLabelColorHighlight : optionDateRangeLabelColor; rangeEndLabel.textColor = isSelectingStartRange ? optionDateRangeLabelColor : optionDateRangeLabelColorHighlight } }
     fileprivate var shouldResetRange: Bool = true
     fileprivate var tintColor : UIColor! = UIColor.brown
     
@@ -820,9 +833,9 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         monthLabel.font = optionSelectorPanelFontMonth
         dateLabel.font = optionSelectorPanelFontDate
         yearLabel.font = optionSelectorPanelFontYear
-        rangeStartLabel.font = optionSelectorPanelFontDate
-        rangeEndLabel.font = optionSelectorPanelFontDate
-        rangeToLabel.font = optionSelectorPanelFontDate
+        rangeStartLabel.font = optionDateRangeLabelFont
+        rangeEndLabel.font = optionDateRangeLabelFont
+        rangeToLabel.font = optionLabelTitleRangeFont
         rangeToLabel.text = optionLabelTitleRange
         
         let firstMonth = Date().beginningOfYear
@@ -840,6 +853,7 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         clockView.fontAMPMHighlight = optionClockFontAMPMHighlight
         clockView.fontColorAMPM = optionClockFontColorAMPM
         clockView.fontColorAMPMHighlight = optionClockFontColorAMPMHighlight
+        clockView.backgroundColorAMPM = optionClockBackgroundColorAMPM
         clockView.backgroundColorAMPMHighlight = optionClockBackgroundColorAMPMHighlight
         clockView.fontHour = optionClockFontHour
         clockView.fontHourHighlight = optionClockFontHourHighlight
@@ -1348,9 +1362,16 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
         case .timeRange:
             shouldResetRange = false
 
-            rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("h':'mma").lowercased()
-            rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("h':'mma").lowercased()
-            setupRightButton(title: optionButtonTitleNext)
+            let startText = optionCurrentDateRange.start.stringFromFormat("h':'mma")
+            let endText = optionCurrentDateRange.end.stringFromFormat("h':'mma")
+            rangeStartLabel.text = optionAMPMLowercase ? startText.lowercased() : startText
+            rangeEndLabel.text = optionAMPMLowercase ? endText.lowercased() : endText
+            
+            if isSelectingStartRange {
+                setupRightButton(title: optionButtonTitleNext)
+            } else {
+                setupRightButton(title: optionButtonTitleDone)
+            }
         case .dateRange:
             rangeStartLabel.text = optionCurrentDateRange.start.stringFromFormat("d' 'MMM' 'yyyy")
             rangeEndLabel.text = optionCurrentDateRange.end.stringFromFormat("d' 'MMM' 'yyyy")
@@ -1358,17 +1379,18 @@ open class WWCalendarTimeSelector: UIViewController, UITableViewDelegate, UITabl
             break
         }
         
-        rangeToLabel.textColor = optionSelectorPanelFontColorDate
+        rangeToLabel.textColor = optionLabelTitleRangeColor
         if shouldResetRange {
-            rangeStartLabel.textColor = optionSelectorPanelFontColorDateHighlight
-            rangeEndLabel.textColor = optionSelectorPanelFontColorDateHighlight
+            rangeStartLabel.textColor = optionDateRangeLabelColorHighlight
+            rangeEndLabel.textColor = optionDateRangeLabelColorHighlight
         }
         else {
-            rangeStartLabel.textColor = isSelectingStartRange ? optionSelectorPanelFontColorDateHighlight : optionSelectorPanelFontColorDate
-            rangeEndLabel.textColor = isSelectingStartRange ? optionSelectorPanelFontColorDate : optionSelectorPanelFontColorDateHighlight
+            rangeStartLabel.textColor = isSelectingStartRange ? optionDateRangeLabelColorHighlight : optionDateRangeLabelColor
+            rangeEndLabel.textColor = isSelectingStartRange ? optionDateRangeLabelColor : optionDateRangeLabelColorHighlight
         }
         
-        let timeText = optionCurrentDate.stringFromFormat("h':'mma").lowercased()
+        let originalTimeText = optionCurrentDate.stringFromFormat("h':'mma")
+        let timeText = optionAMPMLowercase ? originalTimeText.lowercased() : originalTimeText
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = NSTextAlignment.center
         let attrText = NSMutableAttributedString(string: timeText, attributes: [NSFontAttributeName: optionSelectorPanelFontTime, NSForegroundColorAttributeName: optionSelectorPanelFontColorTime, NSParagraphStyleAttributeName: paragraph])
@@ -2495,6 +2517,7 @@ internal class WWClock: UIView {
     internal var fontAMPMHighlight: UIFont!
     internal var fontColorAMPM: UIColor!
     internal var fontColorAMPMHighlight: UIColor!
+    internal var backgroundColorAMPM: UIColor!
     internal var backgroundColorAMPMHighlight: UIColor!
     internal var fontHour: UIFont!
     internal var fontHourHighlight: UIFont!
@@ -2549,9 +2572,12 @@ internal class WWClock: UIView {
         ctx?.setFillColor(backgroundColorClockFace.cgColor)
         ctx?.fillEllipse(in: CGRect(x: faceX, y: faceY, width: faceSize, height: faceSize))
         
-        ctx?.setFillColor(backgroundColorAMPMHighlight.cgColor)
         if time.hour < 12 {
+            ctx?.setFillColor(backgroundColorAMPMHighlight.cgColor)
             ctx?.fillEllipse(in: CGRect(x: amX, y: ampmY, width: ampmSize, height: ampmSize))
+            ctx?.setFillColor(backgroundColorAMPM.cgColor)
+            ctx?.fillEllipse(in: CGRect(x: pmX, y: ampmY, width: ampmSize, height: ampmSize))
+            
             var str = NSAttributedString(string: "AM", attributes: [NSFontAttributeName: fontAMPMHighlight, NSForegroundColorAttributeName: fontColorAMPMHighlight, NSParagraphStyleAttributeName: paragraph])
             var ampmHeight = fontAMPMHighlight.lineHeight
             str.draw(in: CGRect(x: amX, y: ampmY + (ampmSize - ampmHeight) / 2, width: ampmSize, height: ampmHeight))
@@ -2560,7 +2586,11 @@ internal class WWClock: UIView {
             str.draw(in: CGRect(x: pmX, y: ampmY + (ampmSize - ampmHeight) / 2, width: ampmSize, height: ampmHeight))
         }
         else {
+            ctx?.setFillColor(backgroundColorAMPMHighlight.cgColor)
             ctx?.fillEllipse(in: CGRect(x: pmX, y: ampmY, width: ampmSize, height: ampmSize))
+            ctx?.setFillColor(backgroundColorAMPM.cgColor)
+            ctx?.fillEllipse(in: CGRect(x: amX, y: ampmY, width: ampmSize, height: ampmSize))
+            
             var str = NSAttributedString(string: "AM", attributes: [NSFontAttributeName: fontAMPM, NSForegroundColorAttributeName: fontColorAMPM, NSParagraphStyleAttributeName: paragraph])
             var ampmHeight = fontAMPM.lineHeight
             str.draw(in: CGRect(x: amX, y: ampmY + (ampmSize - ampmHeight) / 2, width: ampmSize, height: ampmHeight))
