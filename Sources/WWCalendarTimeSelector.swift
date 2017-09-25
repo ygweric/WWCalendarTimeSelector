@@ -2813,10 +2813,17 @@ internal class WWClock: UIView {
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let touch = touches.sorted(by: { $0.timestamp < $1.timestamp }).last {
-            let pt = touch.location(in: self)
-            touchClock(pt: pt)
-        }
+        
+        /*
+         * Will conflict in 3D touch,
+         * If click AM PM in 3D touch, the needle will moved at the same time
+         * So I disble this feature
+         */
+        
+//        if let touch = touches.sorted(by: { $0.timestamp < $1.timestamp }).last {
+//            let pt = touch.location(in: self)
+//            touchClock(pt: pt)
+//        }
     }
     
     fileprivate func touchClock(pt: CGPoint) {
