@@ -155,12 +155,12 @@ import UIKit
         return dates
     }
     
-    open func resetStartAndEndDate(date: NSDate) {
+    open func resetStartAndEndDate(_ date: Date) {
         start = date.beginningOfDay
         end = date.beginningOfDay
     }
     
-    open func setStartDate(date: NSDate) {
+    open func setStartDate(_ date: Date) {
         start = date.beginningOfDay
         setStartTime(date)
     }
